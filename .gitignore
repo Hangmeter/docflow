@@ -1,0 +1,44 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# TypeScript and build
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Frontend build
+frontend/dist/
+
+# Backend build
+backend/dist/
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Operating systems
+.DS_Store
+Thumbs.db
+
+# Database
+*.sql.dump
+*.backup
+postgres-data/
+
+# Temporary files
+tmp/
+temp/
+.cache/
