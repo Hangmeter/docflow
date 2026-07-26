@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Совещания · Docflow</title>
+    <link rel="stylesheet" href="./css/main.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Docflow</p>
+        <h1>Протоколы совещаний</h1>
+      </div>
+      <span id="backend-status" class="health-badge">Проверка API…</span>
+    </header>
+    <main class="page-shell">
+      <nav class="tabs" aria-label="Разделы">
+        <button class="tab is-active" data-view="meetings">Совещания</button
+        ><button class="tab" data-view="directories">Справочники</button>
+      </nav>
+      <section id="meetings-view">
+        <div class="toolbar">
+          <div>
+            <h2>Совещания</h2>
+            <p>Планирование и состав участников</p>
+          </div>
+          <button id="new-meeting" class="primary">Новое совещание</button>
+        </div>
+        <form id="meeting-filters" class="filters">
+          <input name="search" placeholder="Номер или название" /><select name="meetingType">
+            <option value="">Все типы</option>
+            <option value="PLANNED">Плановое</option>
+            <option value="EXTRAORDINARY">Внеплановое</option>
+            <option value="WORKING">Рабочее</option></select
+          ><select name="protocolStatus">
+            <option value="">Все статусы протокола</option>
+            <option value="DRAFT">Черновик</option>
+            <option value="APPROVED">Утверждён</option>
+            <option value="ON_APPROVAL">На утверждении</option></select
+          ><button>Найти</button>
+        </form>
+        <div id="meeting-list" class="card-list" aria-live="polite"></div>
+      </section>
+      <section id="directories-view" hidden>
+        <div class="toolbar">
+          <div>
+            <h2>Справочники</h2>
+            <p>Организации, подразделения и сотрудники</p>
+          </div>
+        </div>
+        <div class="directory-grid">
+          <article>
+            <h3>Организации</h3>
+            <ul id="organization-list"></ul>
+          </article>
+          <article>
+            <h3>Подразделения</h3>
+            <ul id="department-list"></ul>
+          </article>
+          <article>
+            <h3>Сотрудники</h3>
+            <ul id="person-list"></ul>
+          </article>
+        </div>
+      </section>
+    </main>
+    <dialog id="meeting-dialog">
+      <form id="meeting-form">
+        <h2>Новое совещание</h2>
+        <label>Номер<input name="meetingNumber" maxlength="50" /></label
+        ><label>Название<input name="title" maxlength="500" required /></label>
+        <div class="form-row">
+          <label
+            >Тип<select name="meetingType">
+              <option value="PLANNED">Плановое</option>
+              <option value="EXTRAORDINARY">Внеплановое</option>
+              <option value="WORKING">Рабочее</option>
+              <option value="OTHER">Другое</option>
+            </select></label
+          ><label
+            >Формат<select name="meetingFormat">
+              <option value="VIDEO_CONFERENCE">ВКС</option>
+              <option value="IN_PERSON">Очно</option>
+              <option value="HYBRID">Гибрид</option>
+            </select></label
+          >
+        </div>
+        <label>Начало<input name="scheduledStartAt" type="datetime-local" required /></label
+        ><label>Место<input name="location" maxlength="500" /></label>
+        <p id="form-error" class="form-error"></p>
+        <div class="dialog-actions">
+          <button type="button" id="cancel-meeting">Отмена</button
+          ><button class="primary">Создать</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="meeting-details">
+      <button id="close-details" type="button">Закрыть</button>
+      <h2 id="detail-title"></h2>
+      <p id="detail-meta"></p>
+      <h3>Участники</h3>
+      <ul id="detail-participants"></ul>
+    </dialog>
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>

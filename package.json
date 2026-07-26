@@ -1,0 +1,19 @@
+{
+  "name": "meeting-protocol-system",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspace=backend",
+    "lint": "npm run lint --workspaces",
+    "format:check": "npm run format:check --workspaces",
+    "test": "npm run test --workspaces",
+    "build": "npm run build --workspaces",
+    "db:migrate": "npm run db:migrate --workspace=backend",
+    "db:seed": "npm run db:seed --workspace=backend",
+    "test:integration": "npm run test:integration --workspace=backend"
+  }
+}
