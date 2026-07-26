@@ -11,6 +11,9 @@
     "lint": "npm run lint --workspaces",
     "format:check": "npm run format:check --workspaces",
     "test": "npm run test --workspaces",
-    "build": "npm run build --workspaces"
+    "build": "npm run build --workspaces",
+    "db:migrate": "npm run db:migrate --workspace=backend",
+    "db:seed": "npm run db:seed --workspace=backend",
+    "test:integration": "npm run test:integration --workspace=backend"
   }
 }

@@ -10,7 +10,11 @@ const database = {
     return { queryText };
   }
 };
-const logger = { error(): void {} };
+const logger = {
+  error(): void {
+    return;
+  }
+};
 
 describe('health endpoints', () => {
   it('returns liveness status and a request ID', async () => {

@@ -31,3 +31,15 @@ Unexpected errors use the common format:
   }
 }
 ```
+
+If PostgreSQL is temporarily unavailable, readiness returns HTTP `503` without exposing connection details:
+
+```json
+{
+  "error": {
+    "code": "DATABASE_UNAVAILABLE",
+    "message": "Database is not ready",
+    "requestId": "uuid"
+  }
+}
+```

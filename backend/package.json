@@ -14,7 +14,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "build": "tsc"
+    "build": "tsc",
+    "db:migrate": "tsx src/infrastructure/database/migrations/migrate.ts",
+    "db:seed": "tsx src/infrastructure/database/seeds/seed.ts",
+    "test:integration": "vitest run tests/integration/database"
   },
   "dependencies": {
     "express": "5.1.0",

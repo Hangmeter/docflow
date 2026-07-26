@@ -6,6 +6,9 @@ import { createLogger } from './infrastructure/logging/logger.js';
 const config = loadApplicationConfig();
 const logger = createLogger(config);
 const database = createDatabaseClient(config.databaseUrl);
+database.on('error', (error: Error) => {
+  logger.error({ err: error }, 'Unexpected idle database connection error');
+});
 const app = createApp(database, logger);
 
 const server = app.listen(config.port, () => {

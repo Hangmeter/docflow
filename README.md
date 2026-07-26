@@ -1,62 +1,52 @@
 # Meeting Protocol System
 
-Система ведения протоколов совещаний, решений и поручений. На этапе 1 создан только инфраструктурный каркас: предметные CRUD-модули, совещания, протоколы, решения и задачи ещё не реализованы.
+Система ведения протоколов совещаний, решений и поручений. Этап 2 реализует PostgreSQL-схему, миграции, development seed и минимальные repositories; предметные REST CRUD endpoints и формы ещё не реализованы.
 
-## Versions
+## Versions and architecture
 
-- Node.js `22.14.0`;
-- PostgreSQL `16.6`;
-- Nginx `1.27.5`.
+- Node.js `22.14.0`; PostgreSQL `16.6`; Nginx `1.27.5`.
+- `frontend` — статическое SPA; `backend` — strict TypeScript/Express; `database` — PostgreSQL с named volume.
+- Одноразовый Compose-сервис `migrate` применяет SQL-миграции до запуска backend.
+- Браузер обращается только к `/api/v1`; backend подключается к сервису `database`.
 
-## Architecture
-
-- `frontend` — статическое SPA на HTML, CSS и JavaScript ES modules, выдаваемое Nginx;
-- `backend` — Express REST API на TypeScript в strict-режиме;
-- `database` — PostgreSQL с именованным томом `meeting-protocol-database-data`.
-
-Браузер использует только same-origin URL `/api/v1`. Nginx фронтенда проксирует `/api/` во внутренний сервис `backend`; backend подключается к PostgreSQL по имени `database`.
-
-## Start
-
-1. Создайте локальную конфигурацию без добавления её в Git:
-
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Соберите и запустите сервисы:
-
-   ```bash
-   docker compose up --build -d
-   ```
-
-3. Откройте `http://localhost:8080`. Стартовая страница выполнит проверку backend через `/api/v1/health`.
-
-## Stop
+## Start and stop
 
 ```bash
-docker compose down
-```
-
-Для удаления и named volume с данными:
-
-```bash
-docker compose down --volumes
-```
-
-## Health checks
-
-```bash
+cp .env.example .env
+docker compose up --build -d
 curl -i http://localhost:8080/api/v1/health
 curl -i http://localhost:8080/api/v1/ready
 docker compose ps
+docker compose down
 ```
 
-`/api/v1/health` проверяет liveness API. `/api/v1/ready` выполняет минимальный параметронезависимый запрос `SELECT 1` к PostgreSQL и подтверждает готовность подключения.
+Удаление development-данных вместе с named volume: `docker compose down --volumes`.
 
-## Local checks
+## Database commands
 
-Из корня репозитория:
+Локально, при доступном `DATABASE_URL`:
+
+```bash
+npm run db:migrate
+NODE_ENV=development npm run db:seed
+npm run test:integration
+```
+
+Контейнерные эквиваленты:
+
+```bash
+docker compose run --rm migrate
+docker compose run --rm -e NODE_ENV=development backend node dist/infrastructure/database/seeds/seed.js
+docker compose run --rm integration-test
+```
+
+Seed очищает только выбранную development/test базу после проверки `NODE_ENV` и имени БД. Все данные вымышлены. Integration-тесты требуют отдельную `TEST_DATABASE_URL` и никогда не используют `DATABASE_URL` как fallback.
+
+## Migration guarantees
+
+Миграции из `database/migrations` применяются по версии и транзакционно. Таблица `schema_migrations` хранит версию, имя, SHA-256 checksum и время применения. Повторный запуск безопасен; изменение применённого файла обнаруживается по checksum и завершает команду с ошибкой.
+
+## Checks
 
 ```bash
 npm ci
@@ -64,24 +54,15 @@ npm run typecheck
 npm run lint
 npm run format:check
 npm test
+npm run test:integration
 npm run build
 docker compose config
 ```
 
-Браузер использует только same-origin URL `/api/v1`. Nginx фронтенда проксирует `/api/` во внутренний сервис `backend`; backend подключается к PostgreSQL по имени `database`.
+## Project documents
 
 - Requirements: `docs/requirements.md`
 - Development rules: `dev-guide.md`
-- Database model for later stages: `database/schema/meeting-protocol.dbml`
-
-### Troubleshooting `npm ci`
-
-`npm ci` requires every dependency declared in `package.json` to be present in the corresponding `package-lock.json`. If manifests are changed, regenerate and commit the lockfiles before running CI or building release images:
-
-```bash
-npm install --package-lock-only
-npm install --package-lock-only --prefix backend --workspaces=false
-npm install --package-lock-only --prefix frontend --workspaces=false
-```
-
-The frontend runtime image contains only static files and therefore does not install development-only linting and formatting packages. The backend build currently synchronizes its lock metadata with `package.json` during `npm install`; after committing fully regenerated lockfiles, its Dockerfile should be switched back to `npm ci` for reproducible builds.
+- Database model: `database/schema/meeting-protocol.dbml`
+- Architecture and normalization: `docs/architecture.md`
+- REST API: `docs/api.md`
