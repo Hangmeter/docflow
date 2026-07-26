@@ -1,0 +1,69 @@
+.status-card {
+  width: min(100%, 42rem);
+  padding: 2.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: 0 1rem 3rem rgb(23 32 51 / 10%);
+}
+.eyebrow {
+  margin: 0;
+  color: var(--primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+h1 {
+  margin: 0.75rem 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+.description,
+.status-detail {
+  color: var(--muted);
+  line-height: 1.5;
+}
+.backend-status {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin: 2rem 0 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+.status-indicator {
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-top: 0.4rem;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.status-indicator--pending {
+  background: #b54708;
+}
+.status-indicator--ready {
+  background: var(--success);
+}
+.status-indicator--error {
+  background: var(--danger);
+}
+.status-title {
+  margin: 0;
+  font-weight: 700;
+}
+.status-detail {
+  margin: 0.25rem 0 0;
+}
+.retry-button {
+  padding: 0.7rem 1rem;
+  color: #fff;
+  background: var(--primary);
+  border: 0;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+.retry-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
