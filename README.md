@@ -68,8 +68,20 @@ npm run build
 docker compose config
 ```
 
-## Project documents
+Браузер использует только same-origin URL `/api/v1`. Nginx фронтенда проксирует `/api/` во внутренний сервис `backend`; backend подключается к PostgreSQL по имени `database`.
 
 - Requirements: `docs/requirements.md`
 - Development rules: `dev-guide.md`
 - Database model for later stages: `database/schema/meeting-protocol.dbml`
+
+### Troubleshooting `npm ci`
+
+`npm ci` requires every dependency declared in `package.json` to be present in the corresponding `package-lock.json`. If manifests are changed, regenerate and commit the lockfiles before running CI or building release images:
+
+```bash
+npm install --package-lock-only
+npm install --package-lock-only --prefix backend --workspaces=false
+npm install --package-lock-only --prefix frontend --workspaces=false
+```
+
+The frontend runtime image contains only static files and therefore does not install development-only linting and formatting packages. The backend build currently synchronizes its lock metadata with `package.json` during `npm install`; after committing fully regenerated lockfiles, its Dockerfile should be switched back to `npm ci` for reproducible builds.

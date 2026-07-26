@@ -1,7 +1,7 @@
 FROM node:22.14.0-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install --ignore-scripts --no-audit --no-fund
 COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build && npm prune --omit=dev
