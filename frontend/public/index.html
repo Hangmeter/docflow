@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Система протоколов совещаний</title>
+    <link rel="stylesheet" href="./css/main.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="status-card" aria-labelledby="page-title">
+        <p class="eyebrow">Этап 1 · Рабочий каркас</p>
+        <h1 id="page-title">Система протоколов совещаний</h1>
+        <p class="description">
+          Проверяем доступность REST API перед подключением предметных модулей.
+        </p>
+        <div class="backend-status" aria-live="polite">
+          <span id="status-indicator" class="status-indicator status-indicator--pending"></span>
+          <div>
+            <p id="status-title" class="status-title">Проверяем backend…</p>
+            <p id="status-detail" class="status-detail">Запрос выполняется через /api/v1/health.</p>
+          </div>
+        </div>
+        <button id="retry-button" class="retry-button" type="button">Проверить снова</button>
+      </section>
+    </main>
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>
