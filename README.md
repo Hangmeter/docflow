@@ -68,7 +68,7 @@ npm run build
 docker compose config
 ```
 
-## Project documents
+Браузер использует только same-origin URL `/api/v1`. Nginx фронтенда проксирует `/api/` во внутренний сервис `backend`; backend подключается к PostgreSQL по имени `database`.
 
 - Requirements: `docs/requirements.md`
 - Development rules: `dev-guide.md`
