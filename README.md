@@ -1,6 +1,6 @@
 # Meeting Protocol System
 
-Система ведения протоколов совещаний, решений и поручений. Этап 3 реализует справочники организаций, подразделений и сотрудников, список и карточку совещания, а также участников. Повестка, протокол, решения и задачи остаются следующими этапами.
+Система ведения протоколов совещаний, решений и поручений. Реализованы справочники организаций, подразделений и сотрудников, список, просмотр и полное редактирование совещания, поиск кандидатов и управление составом участников. Повестка, протокол, решения и задачи остаются следующими этапами.
 
 ## Versions and architecture
 
@@ -8,7 +8,7 @@
 - `frontend` — статическое SPA; `backend` — strict TypeScript/Express; `database` — PostgreSQL с named volume.
 - Одноразовый Compose-сервис `migrate` применяет SQL-миграции до запуска backend.
 - Браузер обращается только к `/api/v1`; backend подключается к сервису `database`.
-- SPA показывает совещания и справочники и позволяет создать совещание; REST API также поддерживает состав участников.
+- SPA показывает совещания и справочники, позволяет создавать и редактировать совещания и управлять участниками; REST API запрещает изменения архивированного совещания.
 
 ## Start and stop
 
@@ -21,9 +21,18 @@ docker compose ps
 docker compose down
 ```
 
+После запуска доступны:
+
+- frontend: <http://localhost:8080/> (порт задаётся `FRONTEND_PORT`);
+- liveness: <http://localhost:8080/api/v1/health>;
+- readiness: <http://localhost:8080/api/v1/ready>.
+
 Удаление development-данных вместе с named volume: `docker compose down --volumes`.
 
 ## Database commands
+
+Порядок подготовки пустой БД: **(1)** применить миграции, **(2)** при необходимости загрузить development seed, **(3)** запустить backend. Seed не заменяет миграции и очищает выбранную БД, поэтому не запускайте его над нужными данными.
+
 
 Локально, при доступном `DATABASE_URL`:
 
@@ -59,6 +68,31 @@ npm run test:integration
 npm run build
 docker compose config
 ```
+
+`npm test` запускает unit-тесты workspaces. Интеграционные тесты запускаются отдельно и требуют подготовленной тестовой PostgreSQL из `TEST_DATABASE_URL`.
+
+## API examples
+
+Все запросы направляются через frontend URL:
+
+```bash
+curl 'http://localhost:8080/api/v1/meetings?meetingType=PLANNED&limit=10&offset=0'
+curl 'http://localhost:8080/api/v1/meetings/1'
+
+curl -X PUT 'http://localhost:8080/api/v1/meetings/1' \
+  -H 'Content-Type: application/json' \
+  -d '{"meetingNumber":"M-2026-07","title":"Еженедельное совещание","meetingType":"PLANNED","meetingFormat":"HYBRID","scheduledStartAt":"2026-08-03T07:00:00Z","scheduledEndAt":"2026-08-03T08:00:00Z","location":"Переговорная 2"}'
+
+curl 'http://localhost:8080/api/v1/meetings/1/participant-candidates?search=Орлова'
+curl -X POST 'http://localhost:8080/api/v1/meetings/1/participants' \
+  -H 'Content-Type: application/json' \
+  -d '{"personId":"7","participantRole":"MEMBER"}'
+curl -X PATCH 'http://localhost:8080/api/v1/meetings/1/participants/31' \
+  -H 'Content-Type: application/json' \
+  -d '{"participantRole":"SECRETARY"}'
+```
+
+Полные request/response, validation rules и error codes описаны в `docs/api.md`.
 
 ## Project documents
 
