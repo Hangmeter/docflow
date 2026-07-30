@@ -1,26 +1,27 @@
 # Architecture
 
-The system runs as three long-lived containers plus a one-shot migration job:
+## Контейнеры и поток запросов
 
-1. **frontend**: Nginx serves the static HTML/CSS/ES-module SPA and proxies `/api/` to `backend:3000`.
-2. **migrate**: uses the backend image to apply checksum-verified SQL migrations transactionally before backend startup.
-3. **backend**: Node.js/Express hosts versioned REST endpoints and uses a PostgreSQL connection pool.
-4. **database**: PostgreSQL persists data in the named `database_data` volume.
+Система состоит из трёх долгоживущих контейнеров и одноразового job: **frontend** (Nginx раздаёт SPA и проксирует `/api/` в `backend:3000`), **migrate** (применяет SQL-миграции до API), **backend** (Node.js/Express REST `/api/v1` и пул PostgreSQL), **database** (PostgreSQL и named volume `database_data`).
 
-The browser never receives PostgreSQL credentials. Domain SQL is restricted to migration, seed, and repository modules; repositories do not depend on Express.
+Браузер не получает реквизиты PostgreSQL и обращается к API только через frontend. Backend stateless. Request-context назначает ID, который попадает в заголовок, error envelope и структурированные логи.
+
+## Backend layers
+
+HTTP routes разбирают и валидируют path/query/body. Сервисы реализуют правила редактирования совещания и участников и преобразуют ожидаемые конфликты в доменные ошибки. Repositories не зависят от Express, владеют прикладным SQL и используют позиционные параметры. Общий error handler не раскрывает внутренние детали.
+
+Карточка агрегирует сведения, признак архивного протокола и участников. Полное `PUT` и изменения состава запрещены для `ARCHIVED`. Ограничения БД гарантируют одного сотрудника, председателя и секретаря на совещание. ФИО, должность, подразделение и организация копируются при добавлении, поэтому история не меняется вслед за справочником.
+
+Frontend остаётся same-origin REST-клиентом и содержит только состояние UI/представление: карточку, форму совещания, поиск кандидатов и роли. Архивность и уникальность обеспечиваются backend/БД.
 
 ## Database lifecycle
 
-Migration files are ordered by their four-digit version. `schema_migrations` records version, filename, SHA-256 checksum, and application time. An advisory lock prevents concurrent runners. Every unapplied file and its metadata insert execute in one transaction; a changed applied file causes a fatal error.
+Миграции упорядочены по четырёхзначной версии. `schema_migrations` хранит версию, имя, SHA-256 checksum и время. Advisory lock исключает параллельный запуск; каждая миграция и метаданные транзакционны; изменение применённого файла выявляется checksum.
 
-Development seed data is inserted transactionally. The seed refuses production-like environments and database names, then truncates only the selected development/test database before loading deterministic fictional records.
+Development seed транзакционен, отказывается работать в production-like окружении/неподходящей БД, очищает только выбранную development/test БД и загружает вымышленные данные. `0005-participant-management.sql` добавляет снимок ФИО, запрещает повтор сотрудника независимо от роли и вводит частичные unique indexes председателя/секретаря.
 
-## Normalization decision
+## Normalization decisions
 
-`tasks.discussion_id` was removed from the physical schema and DBML because `tasks.decision_id → decisions.discussion_id` determines the discussion unambiguously. Keeping both columns would permit contradictory links. A task remains obligatorily linked to both concepts through the mandatory decision foreign key. No consolidated task table is stored.
+`tasks.discussion_id` отсутствует: `tasks.decision_id → decisions.discussion_id` однозначно задаёт обсуждение. Дублирование допустило бы противоречия. Сводная таблица задач не хранится. Статус протокола, председатель и число открытых задач вычисляются запросом.
 
-The `COMPLETED` invariant is enforced directly by PostgreSQL: the task must have `progress_percent = 100` and a non-null `actual_completion_date`. Clients must update status, progress, and completion date in the same SQL statement or transaction.
-
-## Stage 3 modules
-
-Reference and meeting HTTP routes validate identifiers, enum values, lengths, dates, email addresses, and URLs before calling typed repositories. Repositories own all SQL and use positional parameters. Meeting list aggregation computes protocol status, chairperson, and open-task count without storing a separate summary table. The frontend remains a same-origin REST client and contains presentation logic only.
+Инвариант `COMPLETED` обеспечивает PostgreSQL: `progress_percent = 100` и `actual_completion_date IS NOT NULL`; значения меняются одной операцией/транзакцией.
