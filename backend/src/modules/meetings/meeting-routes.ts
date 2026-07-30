@@ -10,6 +10,7 @@ import {
   requireString
 } from '../../shared/validation/http-validation.js';
 import { MeetingRepository } from './meeting-repository.js';
+import { MeetingService } from './meeting-service.js';
 import { ParticipantRepository } from './participant-repository.js';
 import type { QueryClient } from '../../infrastructure/database/database-client.js';
 import type { CreateMeetingInput, MeetingFormat, MeetingType } from './meeting-repository.js';
@@ -31,6 +32,16 @@ function parseMeeting(bodyValue: unknown): CreateMeetingInput {
       'VALIDATION_ERROR',
       'scheduledEndAt must not precede scheduledStartAt'
     );
+  const actualStartAt = body.actualStartAt
+    ? requireDateTime(body.actualStartAt, 'actualStartAt')
+    : null;
+  const actualEndAt = body.actualEndAt ? requireDateTime(body.actualEndAt, 'actualEndAt') : null;
+  if (actualStartAt && actualEndAt && actualEndAt < actualStartAt)
+    throw new ApplicationError(
+      400,
+      'VALIDATION_ERROR',
+      'actualEndAt must not precede actualStartAt'
+    );
   return {
     meetingNumber: optionalString(body.meetingNumber, 'meetingNumber', 50),
     title: requireString(body.title, 'title', 500),
@@ -38,6 +49,8 @@ function parseMeeting(bodyValue: unknown): CreateMeetingInput {
     meetingFormat: optionalEnum<MeetingFormat>(body.meetingFormat, 'meetingFormat', FORMATS),
     scheduledStartAt,
     scheduledEndAt,
+    actualStartAt,
+    actualEndAt,
     location: optionalString(body.location, 'location', 500),
     conferenceUrl: optionalUrl(body.conferenceUrl, 'conferenceUrl'),
     nextMeetingAt: body.nextMeetingAt ? requireDateTime(body.nextMeetingAt, 'nextMeetingAt') : null,
@@ -57,6 +70,7 @@ function pageNumber(value: unknown, fallback: number, max: number): number {
 export function createMeetingRouter(database: QueryClient): Router {
   const router = Router();
   const meetings = new MeetingRepository(database);
+  const meetingService = new MeetingService(meetings);
   const participants = new ParticipantRepository(database);
   router.get('/', async (request, response) => {
     const meetingType = optionalEnum<MeetingType>(request.query.meetingType, 'meetingType', TYPES);
@@ -84,14 +98,19 @@ export function createMeetingRouter(database: QueryClient): Router {
     const id = requireId(request.params.meetingId, 'meetingId');
     const item = await meetings.findById(id);
     if (!item) throw new ApplicationError(404, 'MEETING_NOT_FOUND', 'Meeting was not found');
-    response.json({ data: { ...item, participants: await participants.findAll(id) } });
+    response.json({
+      data: {
+        ...item,
+        archived: await meetings.isArchived(id),
+        participants: await participants.findAll(id)
+      }
+    });
   });
   router.put('/:meetingId', async (request, response) => {
-    const item = await meetings.update(
+    const item = await meetingService.update(
       requireId(request.params.meetingId, 'meetingId'),
       parseMeeting(request.body)
     );
-    if (!item) throw new ApplicationError(404, 'MEETING_NOT_FOUND', 'Meeting was not found');
     response.json({ data: item });
   });
   router.get('/:meetingId/participants', async (request, response) =>

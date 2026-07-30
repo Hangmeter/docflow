@@ -29,6 +29,8 @@ export const api = Object.freeze({
   meetings: (query = '') => request(`/meetings${query}`),
   meeting: (meetingId) => request(`/meetings/${meetingId}`),
   createMeeting: (body) => request('/meetings', { method: 'POST', body: JSON.stringify(body) }),
+  updateMeeting: (meetingId, body) =>
+    request(`/meetings/${meetingId}`, { method: 'PUT', body: JSON.stringify(body) }),
   organizations: () => request('/organizations'),
   departments: () => request('/departments'),
   persons: () => request('/persons')

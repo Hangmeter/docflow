@@ -182,7 +182,7 @@ select {
   margin: 0.65rem 0;
 }
 dialog {
-  width: min(92vw, 520px);
+  width: min(92vw, 720px);
   border: 0;
   border-radius: 1rem;
   padding: 1.5rem;
@@ -211,6 +211,26 @@ label {
 }
 .form-error {
   color: var(--danger);
+}
+.success-message {
+  color: #18794e;
+  font-weight: 600;
+}
+#detail-fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.5rem 1rem;
+}
+#detail-fields dt {
+  font-weight: 600;
+}
+#detail-fields dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+textarea {
+  min-height: 6rem;
+  resize: vertical;
 }
 @media (max-width: 700px) {
   .filters,

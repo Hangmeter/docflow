@@ -67,7 +67,8 @@
     </main>
     <dialog id="meeting-dialog">
       <form id="meeting-form">
-        <h2>Новое совещание</h2>
+        <h2 id="meeting-form-title">Новое совещание</h2>
+        <input name="meetingId" type="hidden" />
         <label>Номер<input name="meetingNumber" maxlength="50" /></label
         ><label>Название<input name="title" maxlength="500" required /></label>
         <div class="form-row">
@@ -83,22 +84,43 @@
               <option value="VIDEO_CONFERENCE">ВКС</option>
               <option value="IN_PERSON">Очно</option>
               <option value="HYBRID">Гибрид</option>
+              <option value="OTHER">Другое</option>
             </select></label
           >
         </div>
-        <label>Начало<input name="scheduledStartAt" type="datetime-local" required /></label
-        ><label>Место<input name="location" maxlength="500" /></label>
+        <div class="form-row">
+          <label
+            >Плановое начало<input name="scheduledStartAt" type="datetime-local" required /></label
+          ><label>Плановое окончание<input name="scheduledEndAt" type="datetime-local" /></label>
+        </div>
+        <div class="form-row">
+          <label>Фактическое начало<input name="actualStartAt" type="datetime-local" /></label
+          ><label>Фактическое окончание<input name="actualEndAt" type="datetime-local" /></label>
+        </div>
+        <label>Место<input name="location" maxlength="500" /></label
+        ><label
+          >Ссылка на видеоконференцию<input
+            name="conferenceUrl"
+            type="url"
+            maxlength="2000" /></label
+        ><label>Следующее совещание<input name="nextMeetingAt" type="datetime-local" /></label
+        ><label>Особые отметки<textarea name="specialNotes" maxlength="10000"></textarea></label>
         <p id="form-error" class="form-error"></p>
         <div class="dialog-actions">
           <button type="button" id="cancel-meeting">Отмена</button
-          ><button class="primary">Создать</button>
+          ><button id="save-meeting" class="primary">Создать</button>
         </div>
       </form>
     </dialog>
     <dialog id="meeting-details">
-      <button id="close-details" type="button">Закрыть</button>
+      <div class="dialog-actions">
+        <button id="close-details" type="button">Закрыть</button
+        ><button id="edit-meeting" class="primary" type="button">Редактировать</button>
+      </div>
       <h2 id="detail-title"></h2>
       <p id="detail-meta"></p>
+      <dl id="detail-fields"></dl>
+      <p id="detail-notice" class="success-message" role="status"></p>
       <h3>Участники</h3>
       <ul id="detail-participants"></ul>
     </dialog>
