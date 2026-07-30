@@ -247,6 +247,7 @@ Table meeting_participants {
 
   meeting_id bigint [not null, ref: > meetings.id]
   person_id bigint [not null, ref: > persons.id]
+  full_name_snapshot varchar(255) [not null]
 
   participant_role participant_role [not null, default: 'MEMBER']
   attendance_status attendance_status [not null, default: 'NOT_CONFIRMED']
@@ -263,7 +264,7 @@ Table meeting_participants {
   created_at timestamptz [not null, default: `now()`]
 
   indexes {
-    (meeting_id, person_id, participant_role) [unique]
+    (meeting_id, person_id) [unique]
     meeting_id
     person_id
     attendance_status

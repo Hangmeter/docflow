@@ -123,7 +123,7 @@ export async function seedDevelopmentDatabase(
       )
     ];
     await client.query(
-      `INSERT INTO meeting_participants (meeting_id,person_id,participant_role,attendance_status,position_snapshot) VALUES ($1,$2,'CHAIRPERSON','PRESENT','Руководитель'),($1,$3,'SECRETARY','PRESENT','Специалист'),($4,$2,'CHAIRPERSON','PRESENT','Руководитель'),($4,$3,'SECRETARY','PRESENT','Специалист')`,
+      `INSERT INTO meeting_participants (meeting_id,person_id,full_name_snapshot,participant_role,attendance_status,position_snapshot) SELECT $1,p.id,p.full_name,'CHAIRPERSON','PRESENT','Руководитель' FROM persons p WHERE p.id=$2 UNION ALL SELECT $1,p.id,p.full_name,'SECRETARY','PRESENT','Специалист' FROM persons p WHERE p.id=$3 UNION ALL SELECT $4,p.id,p.full_name,'CHAIRPERSON','PRESENT','Руководитель' FROM persons p WHERE p.id=$2 UNION ALL SELECT $4,p.id,p.full_name,'SECRETARY','PRESENT','Специалист' FROM persons p WHERE p.id=$3`,
       [meetingIds[0], personIds[0], personIds[1], meetingIds[1]]
     );
 

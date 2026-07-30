@@ -51,7 +51,15 @@ If PostgreSQL is temporarily unavailable, readiness returns HTTP `503` without e
 - `GET|POST /api/v1/persons`, `GET /api/v1/persons/{personId}`
 - `GET|POST /api/v1/meetings`, `GET|PUT /api/v1/meetings/{meetingId}`. `PUT` updates all
   meeting details and returns `MEETING_ARCHIVED` when the meeting's protocol is archived.
-- `GET|POST /api/v1/meetings/{meetingId}/participants`
-- `PATCH|DELETE /api/v1/meetings/{meetingId}/participants/{participantId}`
+- `GET|POST /api/v1/meetings/{meetingId}/participants`. `POST` accepts `personId` and one of
+  `CHAIRPERSON`, `SECRETARY`, `MEMBER`, or `INVITED` in `participantRole`.
+- `GET /api/v1/meetings/{meetingId}/participant-candidates?search=...` returns up to 50 active
+  employees matching the name or position and excludes current participants.
+- `PATCH|DELETE /api/v1/meetings/{meetingId}/participants/{participantId}`. `PATCH` changes
+  `participantRole`; chairpersons and secretaries must be reassigned before deletion.
+
+Participant mutations return `MEETING_ARCHIVED` for archived meetings. Duplicate employees and
+duplicate chairperson/secretary roles return a `409` domain error. A participant keeps name,
+organization, department, and position snapshots captured when added.
 
 Meeting list query parameters are `search`, `meetingType`, `protocolStatus`, `from`, `to`, `limit`, and `offset`. All request bodies and identifiers are validated before repository calls. Domain errors use the common error envelope.

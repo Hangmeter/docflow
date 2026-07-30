@@ -232,6 +232,23 @@ textarea {
   min-height: 6rem;
   resize: vertical;
 }
+.table-scroll {
+  overflow-x: auto;
+}
+.participant-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.participant-table th,
+.participant-table td {
+  padding: 0.65rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+#participant-form {
+  display: grid;
+  gap: 1rem;
+}
 @media (max-width: 700px) {
   .filters,
   .directory-grid,

@@ -121,8 +121,53 @@
       <p id="detail-meta"></p>
       <dl id="detail-fields"></dl>
       <p id="detail-notice" class="success-message" role="status"></p>
-      <h3>Участники</h3>
-      <ul id="detail-participants"></ul>
+      <section id="participants-panel">
+        <div class="toolbar">
+          <h3>Участники</h3>
+          <button id="add-participant" class="primary" type="button">Добавить участника</button>
+        </div>
+        <p id="participant-error" class="form-error" role="alert"></p>
+        <div class="table-scroll">
+          <table class="participant-table">
+            <thead>
+              <tr>
+                <th>ФИО</th>
+                <th>Организация</th>
+                <th>Подразделение</th>
+                <th>Должность</th>
+                <th>Роль</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="detail-participants"></tbody>
+          </table>
+        </div>
+      </section>
+    </dialog>
+    <dialog id="participant-dialog">
+      <form id="participant-form">
+        <h2>Добавить участника</h2>
+        <label
+          >Поиск сотрудника<input
+            id="participant-search"
+            type="search"
+            placeholder="ФИО или должность"
+        /></label>
+        <label>Сотрудник<select name="personId" required></select></label>
+        <label
+          >Роль<select name="participantRole">
+            <option value="MEMBER">Участник</option>
+            <option value="CHAIRPERSON">Председатель</option>
+            <option value="SECRETARY">Секретарь</option>
+            <option value="INVITED">Приглашённый</option>
+          </select></label
+        >
+        <p id="participant-form-error" class="form-error"></p>
+        <div class="dialog-actions">
+          <button id="cancel-participant" type="button">Отмена</button
+          ><button class="primary">Добавить</button>
+        </div>
+      </form>
     </dialog>
     <script type="module" src="./js/app.js"></script>
   </body>
