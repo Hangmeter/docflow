@@ -203,4 +203,52 @@ describeDatabase('PostgreSQL integration', () => {
     expect(details.status).toBe(200);
     expect(details.body.data.participants).toEqual([]);
   });
+  it('updates meeting details, validates periods, and rejects archived meetings', async () => {
+    const application = createApp(pool, { error(): void {} });
+    const created = await request(application).post('/api/v1/meetings').send({
+      title: 'Meeting to edit',
+      scheduledStartAt: '2026-10-01T09:00:00.000Z'
+    });
+    const meetingId = created.body.data.id as string;
+    const updated = await request(application).put(`/api/v1/meetings/${meetingId}`).send({
+      meetingNumber: 'EDIT-1',
+      title: 'Updated meeting',
+      meetingType: 'EXTRAORDINARY',
+      meetingFormat: 'HYBRID',
+      scheduledStartAt: '2026-10-02T09:00:00.000Z',
+      scheduledEndAt: '2026-10-02T10:00:00.000Z',
+      actualStartAt: '2026-10-02T09:05:00.000Z',
+      actualEndAt: '2026-10-02T09:55:00.000Z',
+      location: 'Room 2',
+      conferenceUrl: 'https://meet.example.test/edit-1',
+      nextMeetingAt: '2026-10-09T09:00:00.000Z',
+      specialNotes: 'Updated notes'
+    });
+    expect(updated.status).toBe(200);
+    expect(updated.body.data).toMatchObject({
+      title: 'Updated meeting',
+      actualStartAt: '2026-10-02T09:05:00.000Z',
+      specialNotes: 'Updated notes'
+    });
+
+    const invalid = await request(application).put(`/api/v1/meetings/${meetingId}`).send({
+      title: 'Must not persist',
+      scheduledStartAt: '2026-10-02T10:00:00.000Z',
+      scheduledEndAt: '2026-10-02T09:00:00.000Z'
+    });
+    expect(invalid.status).toBe(400);
+    expect((await request(application).get(`/api/v1/meetings/${meetingId}`)).body.data.title).toBe(
+      'Updated meeting'
+    );
+
+    await pool.query(
+      `INSERT INTO protocols (meeting_id,protocol_number,protocol_date,status) VALUES ($1,$2,'2026-10-02','ARCHIVED')`,
+      [meetingId, `ARCH-${meetingId}`]
+    );
+    const archived = await request(application)
+      .put(`/api/v1/meetings/${meetingId}`)
+      .send({ title: 'Forbidden update', scheduledStartAt: '2026-10-02T09:00:00.000Z' });
+    expect(archived.status).toBe(409);
+    expect(archived.body.error.code).toBe('MEETING_ARCHIVED');
+  });
 });

@@ -49,7 +49,8 @@ If PostgreSQL is temporarily unavailable, readiness returns HTTP `503` without e
 - `GET|POST /api/v1/organizations`, `GET /api/v1/organizations/{organizationId}`
 - `GET|POST /api/v1/departments`, `GET /api/v1/departments/{departmentId}`
 - `GET|POST /api/v1/persons`, `GET /api/v1/persons/{personId}`
-- `GET|POST /api/v1/meetings`, `GET|PUT /api/v1/meetings/{meetingId}`
+- `GET|POST /api/v1/meetings`, `GET|PUT /api/v1/meetings/{meetingId}`. `PUT` updates all
+  meeting details and returns `MEETING_ARCHIVED` when the meeting's protocol is archived.
 - `GET|POST /api/v1/meetings/{meetingId}/participants`
 - `PATCH|DELETE /api/v1/meetings/{meetingId}/participants/{participantId}`
 

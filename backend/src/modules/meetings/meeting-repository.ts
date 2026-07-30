@@ -29,6 +29,8 @@ export interface CreateMeetingInput {
   meetingFormat?: MeetingFormat | undefined;
   scheduledStartAt: Date;
   scheduledEndAt?: Date | null | undefined;
+  actualStartAt?: Date | null | undefined;
+  actualEndAt?: Date | null | undefined;
   location?: string | null | undefined;
   conferenceUrl?: string | null | undefined;
   nextMeetingAt?: Date | null | undefined;
@@ -61,6 +63,9 @@ interface MeetingRow extends QueryResultRow {
   chairperson: string | null;
   open_task_count: string;
 }
+interface MeetingArchiveRow extends QueryResultRow {
+  is_archived: boolean;
+}
 function map(row: MeetingRow): Meeting {
   return {
     id: row.id,
@@ -84,7 +89,7 @@ export class MeetingRepository {
   public constructor(private readonly database: QueryClient) {}
   public async create(input: CreateMeetingInput): Promise<Meeting> {
     const r = await this.database.query<MeetingRow>(
-      `INSERT INTO meetings (meeting_number,title,meeting_type,meeting_format,scheduled_start_at,scheduled_end_at,location,conference_url,next_meeting_at,special_notes) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id,meeting_number,title,meeting_type,meeting_format,scheduled_start_at,scheduled_end_at,actual_start_at,actual_end_at,location,conference_url,next_meeting_at,special_notes`,
+      `INSERT INTO meetings (meeting_number,title,meeting_type,meeting_format,scheduled_start_at,scheduled_end_at,actual_start_at,actual_end_at,location,conference_url,next_meeting_at,special_notes) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id,meeting_number,title,meeting_type,meeting_format,scheduled_start_at,scheduled_end_at,actual_start_at,actual_end_at,location,conference_url,next_meeting_at,special_notes`,
       [
         input.meetingNumber ?? null,
         input.title,
@@ -92,6 +97,8 @@ export class MeetingRepository {
         input.meetingFormat ?? 'VIDEO_CONFERENCE',
         input.scheduledStartAt,
         input.scheduledEndAt ?? null,
+        input.actualStartAt ?? null,
+        input.actualEndAt ?? null,
         input.location ?? null,
         input.conferenceUrl ?? null,
         input.nextMeetingAt ?? null,
@@ -106,6 +113,13 @@ export class MeetingRepository {
       [id]
     );
     return r.rows[0] ? map(r.rows[0]) : null;
+  }
+  public async isArchived(id: string): Promise<boolean> {
+    const result = await this.database.query<MeetingArchiveRow>(
+      `SELECT EXISTS (SELECT 1 FROM protocols WHERE meeting_id=$1 AND status='ARCHIVED') AS is_archived`,
+      [id]
+    );
+    return result.rows[0]?.is_archived ?? false;
   }
   public async findAll(
     query: MeetingListQuery = { limit: 25, offset: 0 }
@@ -131,7 +145,7 @@ export class MeetingRepository {
   }
   public async update(id: string, input: CreateMeetingInput): Promise<Meeting | null> {
     const r = await this.database.query<MeetingRow>(
-      `UPDATE meetings SET meeting_number=$2,title=$3,meeting_type=$4,meeting_format=$5,scheduled_start_at=$6,scheduled_end_at=$7,location=$8,conference_url=$9,next_meeting_at=$10,special_notes=$11,updated_at=now() WHERE id=$1 RETURNING id,meeting_number,title,meeting_type,meeting_format,scheduled_start_at,scheduled_end_at,actual_start_at,actual_end_at,location,conference_url,next_meeting_at,special_notes`,
+      `UPDATE meetings SET meeting_number=$2,title=$3,meeting_type=$4,meeting_format=$5,scheduled_start_at=$6,scheduled_end_at=$7,actual_start_at=$8,actual_end_at=$9,location=$10,conference_url=$11,next_meeting_at=$12,special_notes=$13,updated_at=now() WHERE id=$1 AND NOT EXISTS (SELECT 1 FROM protocols WHERE meeting_id=$1 AND status='ARCHIVED') RETURNING id,meeting_number,title,meeting_type,meeting_format,scheduled_start_at,scheduled_end_at,actual_start_at,actual_end_at,location,conference_url,next_meeting_at,special_notes`,
       [
         id,
         input.meetingNumber ?? null,
@@ -140,6 +154,8 @@ export class MeetingRepository {
         input.meetingFormat ?? 'VIDEO_CONFERENCE',
         input.scheduledStartAt,
         input.scheduledEndAt ?? null,
+        input.actualStartAt ?? null,
+        input.actualEndAt ?? null,
         input.location ?? null,
         input.conferenceUrl ?? null,
         input.nextMeetingAt ?? null,
