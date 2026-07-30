@@ -12,14 +12,14 @@ import {
 import { MeetingRepository } from './meeting-repository.js';
 import { MeetingService } from './meeting-service.js';
 import { ParticipantRepository } from './participant-repository.js';
+import { ParticipantService } from './participant-service.js';
 import type { QueryClient } from '../../infrastructure/database/database-client.js';
 import type { CreateMeetingInput, MeetingFormat, MeetingType } from './meeting-repository.js';
-import type { AttendanceStatus, ParticipantRole } from './participant-repository.js';
+import type { ParticipantRole } from './participant-repository.js';
 const TYPES = ['PLANNED', 'EXTRAORDINARY', 'WORKING', 'OTHER'] as const;
 const FORMATS = ['IN_PERSON', 'VIDEO_CONFERENCE', 'HYBRID', 'OTHER'] as const;
 const PROTOCOL_STATUSES = ['DRAFT', 'ON_APPROVAL', 'APPROVED', 'ARCHIVED', 'CANCELLED'] as const;
-const ROLES = ['CHAIRPERSON', 'SECRETARY', 'MEMBER', 'INVITED', 'EXPERT', 'OBSERVER'] as const;
-const ATTENDANCE = ['PRESENT', 'ABSENT', 'PARTIALLY_PRESENT', 'REMOTE', 'NOT_CONFIRMED'] as const;
+const ROLES = ['CHAIRPERSON', 'SECRETARY', 'MEMBER', 'INVITED'] as const;
 function parseMeeting(bodyValue: unknown): CreateMeetingInput {
   const body = requireObject(bodyValue);
   const scheduledStartAt = requireDateTime(body.scheduledStartAt, 'scheduledStartAt');
@@ -72,6 +72,7 @@ export function createMeetingRouter(database: QueryClient): Router {
   const meetings = new MeetingRepository(database);
   const meetingService = new MeetingService(meetings);
   const participants = new ParticipantRepository(database);
+  const participantService = new ParticipantService(participants, meetings);
   router.get('/', async (request, response) => {
     const meetingType = optionalEnum<MeetingType>(request.query.meetingType, 'meetingType', TYPES);
     const from = request.query.from ? requireDateTime(request.query.from, 'from') : undefined;
@@ -118,37 +119,37 @@ export function createMeetingRouter(database: QueryClient): Router {
       data: await participants.findAll(requireId(request.params.meetingId, 'meetingId'))
     })
   );
+  router.get('/:meetingId/participant-candidates', async (request, response) =>
+    response.json({
+      data: await participants.findCandidates(
+        requireId(request.params.meetingId, 'meetingId'),
+        optionalString(request.query.search, 'search', 255) ?? undefined
+      )
+    })
+  );
   router.post('/:meetingId/participants', async (request, response) => {
     const body = requireObject(request.body);
-    const item = await participants.create(
+    const item = await participantService.create(
       requireId(request.params.meetingId, 'meetingId'),
       requireId(body.personId, 'personId'),
-      optionalEnum<ParticipantRole>(body.participantRole, 'participantRole', ROLES) ?? 'MEMBER',
-      optionalEnum<AttendanceStatus>(body.attendanceStatus, 'attendanceStatus', ATTENDANCE) ??
-        'NOT_CONFIRMED'
+      optionalEnum<ParticipantRole>(body.participantRole, 'participantRole', ROLES) ?? 'MEMBER'
     );
-    if (!item) throw new ApplicationError(404, 'PERSON_NOT_FOUND', 'Person was not found');
     response.status(201).json({ data: item });
   });
   router.patch('/:meetingId/participants/:participantId', async (request, response) => {
     const body = requireObject(request.body);
-    const item = await participants.updateAttendance(
+    const item = await participantService.updateRole(
       requireId(request.params.participantId, 'participantId'),
       requireId(request.params.meetingId, 'meetingId'),
-      optionalEnum<AttendanceStatus>(body.attendanceStatus, 'attendanceStatus', ATTENDANCE) ??
-        'NOT_CONFIRMED'
+      optionalEnum<ParticipantRole>(body.participantRole, 'participantRole', ROLES) ?? 'MEMBER'
     );
-    if (!item)
-      throw new ApplicationError(404, 'PARTICIPANT_NOT_FOUND', 'Participant was not found');
     response.json({ data: item });
   });
   router.delete('/:meetingId/participants/:participantId', async (request, response) => {
-    const deleted = await participants.delete(
+    await participantService.delete(
       requireId(request.params.participantId, 'participantId'),
       requireId(request.params.meetingId, 'meetingId')
     );
-    if (!deleted)
-      throw new ApplicationError(404, 'PARTICIPANT_NOT_FOUND', 'Participant was not found');
     response.status(204).send();
   });
   return router;

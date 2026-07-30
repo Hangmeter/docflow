@@ -4,6 +4,12 @@ const list = document.querySelector('#meeting-list');
 const dialog = document.querySelector('#meeting-dialog');
 const form = document.querySelector('#meeting-form');
 let selectedMeeting = null;
+const roleLabels = {
+  CHAIRPERSON: 'Председатель',
+  SECRETARY: 'Секретарь',
+  MEMBER: 'Участник',
+  INVITED: 'Приглашённый'
+};
 function text(value) {
   return value ?? '—';
 }
@@ -211,14 +217,8 @@ async function openMeetingDetails(meetingId, notice = '') {
     document.querySelector('#detail-notice').textContent = meeting.archived
       ? 'Архивированное совещание нельзя редактировать'
       : notice;
-    const participants = document.querySelector('#detail-participants');
-    participants.replaceChildren(
-      ...meeting.participants.map((participant) => {
-        const item = document.createElement('li');
-        item.textContent = `${participant.fullName} — ${participant.participantRole} — ${participant.attendanceStatus}`;
-        return item;
-      })
-    );
+    renderParticipants(meeting.participants);
+    document.querySelector('#add-participant').hidden = meeting.archived;
     detailsDialog.showModal();
   } catch (error) {
     logger.error('Meeting details failed', error);
@@ -230,3 +230,99 @@ list.addEventListener('click', (event) => {
 });
 document.querySelector('#close-details').addEventListener('click', () => detailsDialog.close());
 document.querySelector('#edit-meeting').addEventListener('click', openEditForm);
+
+const participantDialog = document.querySelector('#participant-dialog');
+const participantForm = document.querySelector('#participant-form');
+function renderParticipants(items) {
+  const body = document.querySelector('#detail-participants');
+  body.replaceChildren();
+  for (const participant of items) {
+    const row = document.createElement('tr');
+    for (const value of [
+      participant.fullName,
+      participant.organizationSnapshot,
+      participant.departmentSnapshot,
+      participant.positionSnapshot
+    ]) {
+      const cell = document.createElement('td');
+      cell.textContent = text(value);
+      row.append(cell);
+    }
+    const roleCell = document.createElement('td');
+    const role = document.createElement('select');
+    for (const [value, label] of Object.entries(roleLabels)) role.add(new Option(label, value));
+    role.value = participant.participantRole;
+    role.disabled = selectedMeeting.archived;
+    role.addEventListener('change', async () => {
+      try {
+        await api.updateParticipant(selectedMeeting.id, participant.id, {
+          participantRole: role.value
+        });
+        await refreshParticipants();
+      } catch (error) {
+        role.value = participant.participantRole;
+        document.querySelector('#participant-error').textContent = showError(error);
+      }
+    });
+    roleCell.append(role);
+    row.append(roleCell);
+    const actions = document.createElement('td');
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.textContent = 'Удалить';
+    remove.hidden = selectedMeeting.archived;
+    remove.addEventListener('click', async () => {
+      if (!window.confirm(`Удалить участника «${participant.fullName}»?`)) return;
+      try {
+        await api.deleteParticipant(selectedMeeting.id, participant.id);
+        await refreshParticipants();
+      } catch (error) {
+        document.querySelector('#participant-error').textContent = showError(error);
+      }
+    });
+    actions.append(remove);
+    row.append(actions);
+    body.append(row);
+  }
+}
+async function refreshParticipants() {
+  const meeting = await api.meeting(selectedMeeting.id);
+  selectedMeeting = meeting;
+  renderParticipants(meeting.participants);
+  document.querySelector('#participant-error').textContent = '';
+}
+async function loadCandidates() {
+  const query = document.querySelector('#participant-search').value;
+  const candidates = await api.participantCandidates(selectedMeeting.id, query);
+  const select = participantForm.elements.personId;
+  select.replaceChildren();
+  for (const candidate of candidates)
+    select.add(new Option(`${candidate.fullName} — ${text(candidate.positionName)}`, candidate.id));
+}
+document.querySelector('#add-participant').addEventListener('click', async () => {
+  participantForm.reset();
+  document.querySelector('#participant-form-error').textContent = '';
+  await loadCandidates();
+  participantDialog.showModal();
+});
+document.querySelector('#participant-search').addEventListener(
+  'input',
+  () =>
+    void loadCandidates().catch((error) => {
+      document.querySelector('#participant-form-error').textContent = showError(error);
+    })
+);
+document
+  .querySelector('#cancel-participant')
+  .addEventListener('click', () => participantDialog.close());
+participantForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const values = Object.fromEntries(new FormData(participantForm));
+  try {
+    await api.addParticipant(selectedMeeting.id, values);
+    participantDialog.close();
+    await refreshParticipants();
+  } catch (error) {
+    document.querySelector('#participant-form-error').textContent = showError(error);
+  }
+});
