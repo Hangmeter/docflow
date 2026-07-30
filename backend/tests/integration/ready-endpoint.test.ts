@@ -1,18 +1,16 @@
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
-
 import { createApp } from '../../src/app.js';
-
+import type { QueryResult, QueryResultRow } from 'pg';
 const logger = {
   error(): void {
     return;
   }
 };
-
 describe('ready endpoint failures', () => {
   it('returns the common error response when the database is unavailable', async () => {
     const database = {
-      async query(): Promise<never> {
+      async query<Row extends QueryResultRow>(): Promise<QueryResult<Row>> {
         throw new Error('connection unavailable');
       }
     };

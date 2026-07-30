@@ -43,3 +43,14 @@ If PostgreSQL is temporarily unavailable, readiness returns HTTP `503` without e
   }
 }
 ```
+
+## Stage 3 resources
+
+- `GET|POST /api/v1/organizations`, `GET /api/v1/organizations/{organizationId}`
+- `GET|POST /api/v1/departments`, `GET /api/v1/departments/{departmentId}`
+- `GET|POST /api/v1/persons`, `GET /api/v1/persons/{personId}`
+- `GET|POST /api/v1/meetings`, `GET|PUT /api/v1/meetings/{meetingId}`
+- `GET|POST /api/v1/meetings/{meetingId}/participants`
+- `PATCH|DELETE /api/v1/meetings/{meetingId}/participants/{participantId}`
+
+Meeting list query parameters are `search`, `meetingType`, `protocolStatus`, `from`, `to`, `limit`, and `offset`. All request bodies and identifiers are validated before repository calls. Domain errors use the common error envelope.

@@ -180,4 +180,27 @@ describeDatabase('PostgreSQL integration', () => {
       'NOT_STARTED'
     ]);
   });
+  it('creates and displays a meeting through the Stage 3 API', async () => {
+    await seedDevelopmentDatabase(pool, 'test');
+    const application = createApp(pool, {
+      error(): void {
+        return;
+      }
+    });
+    const created = await request(application).post('/api/v1/meetings').send({
+      title: 'API Integration Meeting',
+      meetingType: 'WORKING',
+      meetingFormat: 'IN_PERSON',
+      scheduledStartAt: '2026-10-01T09:00:00.000Z',
+      location: 'Тестовая переговорная'
+    });
+    expect(created.status).toBe(201);
+    const listed = await request(application).get('/api/v1/meetings?search=API%20Integration');
+    expect(listed.status).toBe(200);
+    expect(listed.body.data).toHaveLength(1);
+    expect(listed.body.data[0].title).toBe('API Integration Meeting');
+    const details = await request(application).get(`/api/v1/meetings/${created.body.data.id}`);
+    expect(details.status).toBe(200);
+    expect(details.body.data.participants).toEqual([]);
+  });
 });

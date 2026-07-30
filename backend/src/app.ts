@@ -4,13 +4,13 @@ import { createErrorHandler } from './infrastructure/http/error-handler.js';
 import { createApiRouter } from './infrastructure/http/routes.js';
 import { addRequestContext } from './infrastructure/http/request-context.js';
 
-import type { DatabaseHealthClient } from './infrastructure/http/routes.js';
+import type { QueryClient } from './infrastructure/database/database-client.js';
 
 export interface HttpLogger {
   error(bindings: object, message: string): void;
 }
 
-export function createApp(database: DatabaseHealthClient, logger: HttpLogger): express.Express {
+export function createApp(database: QueryClient, logger: HttpLogger): express.Express {
   const app = express();
   app.disable('x-powered-by');
   app.use(express.json({ limit: '100kb' }));

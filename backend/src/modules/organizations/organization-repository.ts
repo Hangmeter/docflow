@@ -13,8 +13,8 @@ export interface Organization {
 
 export interface CreateOrganizationInput {
   name: string;
-  shortName?: string | null;
-  externalCode?: string | null;
+  shortName?: string | null | undefined;
+  externalCode?: string | null | undefined;
 }
 
 interface OrganizationRow extends QueryResultRow {

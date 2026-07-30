@@ -20,3 +20,7 @@ Development seed data is inserted transactionally. The seed refuses production-l
 `tasks.discussion_id` was removed from the physical schema and DBML because `tasks.decision_id → decisions.discussion_id` determines the discussion unambiguously. Keeping both columns would permit contradictory links. A task remains obligatorily linked to both concepts through the mandatory decision foreign key. No consolidated task table is stored.
 
 The `COMPLETED` invariant is enforced directly by PostgreSQL: the task must have `progress_percent = 100` and a non-null `actual_completion_date`. Clients must update status, progress, and completion date in the same SQL statement or transaction.
+
+## Stage 3 modules
+
+Reference and meeting HTTP routes validate identifiers, enum values, lengths, dates, email addresses, and URLs before calling typed repositories. Repositories own all SQL and use positional parameters. Meeting list aggregation computes protocol status, chairperson, and open-task count without storing a separate summary table. The frontend remains a same-origin REST client and contains presentation logic only.
